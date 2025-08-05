@@ -13,6 +13,7 @@ docker rmi kinesisorg/node-proxy
 
 cp ${PWD}/selfsign.pem ${MOUNTDIR}/certs/server.pem
 
+sudo rm ${MOUNTDIR}/dataplaneapi.yml
 cp dataplaneapi.yml.template ${MOUNTDIR}/dataplaneapi.yml
 sed -i "s/__HTTP_PORT__/${HTTP_PORT}/g" ${MOUNTDIR}/dataplaneapi.yml
 
@@ -24,8 +25,10 @@ sed -i "s/__HTTPS_HOST__/${HTTPS_HOST}/g" ${MOUNTDIR}/haproxy.cfg
 
 docker build -t kinesisorg/node-proxy .
 CONTID=$(docker run -d \
+  -p 22222:22/tcp \
   -p 55555:55555/tcp \
   -p 5555:5555/tcp \
+  -e SFTP_AUTH=password \
   -v ${PWD}/mount/certs:/etc/haproxy/certs \
   -v ${PWD}/mount:/etc/haproxy/mount \
   kinesisorg/node-proxy)
