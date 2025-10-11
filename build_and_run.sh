@@ -24,15 +24,17 @@ sed -i "s/__HTTPS_PORT__/${HTTPS_PORT}/g" ${MOUNTDIR}/haproxy.cfg
 sed -i "s/__HTTPS_HOST__/${HTTPS_HOST}/g" ${MOUNTDIR}/haproxy.cfg
 
 docker build -t kinesisorg/node-proxy .
-CONTID=$(docker run -d \
+CMD="docker run -d \
   -p 22222:22/tcp \
   -p 55555:55555/tcp \
   -p 5555:5555/tcp \
   -e SFTP_AUTH=password \
   -v ${PWD}/mount/certs:/etc/haproxy/certs \
   -v ${PWD}/mount:/etc/haproxy/mount \
-  kinesisorg/node-proxy)
-echo Started ${CONTID}
+  kinesisorg/node-proxy"
+echo "${CMD}"
+CONTID=$(${CMD})
+echo "Started ${CONTID}"
 
 HTTP_URL="http://localhost:${HTTP_PORT}/v3/info"
 until curl -fsu "nmagent:${NMAGENT_AUTH}" ${HTTP_URL} >/dev/null; do
