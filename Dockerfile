@@ -1,5 +1,12 @@
+# Stage 1: Build the Go binary
+FROM golang:1.25-alpine AS builder
+WORKDIR /app
+COPY acme-handler/* .
+RUN go build -o acme-handler .
+
+# Stage 2: Final HAProxy image
 # https://www.haproxy.com/documentation/haproxy-data-plane-api/installation/install-on-haproxy/
-FROM haproxytech/haproxy-ubuntu:3.3
+FROM haproxytech/haproxy-ubuntu:3.4
 
 ARG SFTP_USER=nmagent
 ENV SFTP_USER=${SFTP_USER}
@@ -16,6 +23,7 @@ Match User ${SFTP_USER}\n\
     X11Forwarding no\n\
     AllowTcpForwarding no" >>/etc/ssh/sshd_config
 
+COPY --from=builder /app/acme-handler /usr/local/bin/acme-handler
 COPY entrypoint.sh entrypoint.sh
 COPY reload.sh /etc/haproxy/reload.sh
 COPY restart.sh /etc/haproxy/restart.sh

@@ -21,6 +21,11 @@ else
   /usr/sbin/sshd -D&
 fi
 
+if [[ ! -z "${REDIS_MASTER_NAME}" ]]; then
+  echo "[*] Starting acme-handler"
+  acme-handler -D&
+fi
+
 RUN_API="dataplaneapi -f ${CONFIG_ROOT}/dataplaneapi.yml"
 echo "[*] ${RUN_API}"
 ${RUN_API} &
