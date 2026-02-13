@@ -1,8 +1,16 @@
 # Stage 1: Build the Go binary
-FROM golang:1.25-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
 WORKDIR /app
+
+# These ARGs are automatically filled by Docker Buildx
+ARG TARGETOS
+ARG TARGETARCH
+
 COPY acme-handler/* .
-RUN go build -o acme-handler .
+
+# Use GOOS and GOARCH to ensure we build for the correct target
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+  go build -ldflags="-s -w" -o acme-handler .
 
 # Stage 2: Final HAProxy image
 # https://www.haproxy.com/documentation/haproxy-data-plane-api/installation/install-on-haproxy/
