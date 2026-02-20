@@ -2,6 +2,7 @@
 set -e
 CONFIG_ROOT=/etc/haproxy/mount
 CERTS_ROOT=/etc/haproxy/certs
+SFTP_PORT=${SFTP_PORT:-22}
 
 if [[ -z "${SFTP_USER}" ]]; then
   echo "[*] Skip to set up SFTP"
@@ -17,8 +18,8 @@ else
   # For OpenSSH to chroot, dir must be owned by root:root
   chown root:root ${CERTS_ROOT}
   chmod 755 ${CERTS_ROOT}
-  echo "[*] Starting sshd"
-  /usr/sbin/sshd -D&
+  echo "[*] Starting sshd on ${SFTP_PORT}/tcp"
+  /usr/sbin/sshd -p ${SFTP_PORT} -D&
 fi
 
 if [[ ! -z "${REDIS_MASTER_NAME}" ]]; then
