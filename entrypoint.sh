@@ -8,6 +8,9 @@ if [[ -z "${SFTP_USER}" ]]; then
   echo "[*] Skip to set up SFTP"
 else
   echo "[*] Setting up SFTP"
+  # Populate config
+  sed 's/@SFTP_USER@/'${SFTP_USER}'/' \
+    /etc/ssh/sshd_config.template >/etc/ssh/sshd_config
   # Create user if not already created
   if ! id "${SFTP_USER}" &>/dev/null; then
     useradd -m -d /home/"${SFTP_USER}" -s /bin/bash "${SFTP_USER}"
