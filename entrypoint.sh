@@ -2,7 +2,10 @@
 set -e
 CONFIG_ROOT=/etc/haproxy/mount
 CERTS_ROOT=/etc/haproxy/certs
+LOG_DIR=/var/log/haproxy
 SFTP_PORT=${SFTP_PORT:-22}
+
+mkdir -p "${LOG_DIR}"
 
 # --- Initialization Logic ---
 
@@ -44,7 +47,7 @@ start_acme() {
 start_dataplane() {
   RUN_API="dataplaneapi -f ${CONFIG_ROOT}/dataplaneapi.yml"
   echo "[*] ${RUN_API}"
-  ${RUN_API} &
+  ${RUN_API} >> "${LOG_DIR}/dataplane.log" 2>&1 &
 }
 
 # --- Main Monitor Loop ---
@@ -57,7 +60,7 @@ start_dataplane
 # HAProxy runs in the foreground as the "Master" process
 RUN_HAP="exec haproxy -W -db -f ${CONFIG_ROOT}/haproxy.cfg -p /run/haproxy.pid"
 echo "[*] ${RUN_HAP}"
-${RUN_HAP} &
+${RUN_HAP} >> "${LOG_DIR}/haproxy.log" 2>&1 &
 HAP_PID=$!
 
 # Monitor Loop: Runs as long as HAProxy is alive
