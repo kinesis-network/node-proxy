@@ -29,7 +29,8 @@ haproxy:
     restart_cmd: /etc/haproxy/restart.sh
     reload_strategy: custom
 log_targets:
-- log_to: stdout
+- log_to: file
+  log_file: /var/log/haproxy/dataplane.log
   log_level: info
   log_types:
   - access

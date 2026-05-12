@@ -1,7 +1,7 @@
 # Installation
 
 ```
-export ROOTDIR=/data/src/kinesis/node-proxy/examples/load-balancer
+export ROOTDIR=${PWD}/examples/load-balancer/mount
 docker rm -f $(docker ps -qaf ancestor=kinesisorg/node-proxy)
 docker run -d \
   --network=host \
@@ -12,8 +12,9 @@ docker run -d \
   -e REDIS_MASTER_NAME=kinesis-load-balancer \
   -e REDIS_PASSWORD=password \
   -e CACERT_BASE64=xxxx \
-  -v /home/ubuntu/node-proxy/certs:/etc/haproxy/certs \
-  -v /home/ubuntu/node-proxy:/etc/haproxy/mount \
+  -v ${ROOTDIR}/certs:/etc/haproxy/certs \
+  -v ${ROOTDIR}:/etc/haproxy/mount \
+  -v ${ROOTDIR}:/var/log/haproxy \
   kinesisorg/node-proxy
 docker logs -f $(docker ps -qaf ancestor=kinesisorg/node-proxy)
 ```

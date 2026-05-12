@@ -19,6 +19,7 @@ FROM haproxytech/haproxy-ubuntu:3.4
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
       openssh-server \
+      syslog-ng \
   && apt-get clean && rm -rf /var/lib/apt/lists/* \
   && mkdir /run/sshd
 RUN mv /etc/ssh/sshd_config /etc/ssh/sshd_config.template \
@@ -34,6 +35,10 @@ COPY --from=builder /app/acme-handler /usr/local/bin/acme-handler
 COPY entrypoint.sh entrypoint.sh
 COPY reload.sh /etc/haproxy/reload.sh
 COPY restart.sh /etc/haproxy/restart.sh
+
+# Add syslog-ng config
+COPY syslog-haproxy.conf /etc/syslog-ng/conf.d/haproxy.conf
+
 RUN chmod +x /etc/haproxy/restart.sh \
   && chmod +x /etc/haproxy/reload.sh \
   && chmod +x /entrypoint.sh
