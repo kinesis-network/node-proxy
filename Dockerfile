@@ -37,7 +37,7 @@ COPY reload.sh /etc/haproxy/reload.sh
 COPY restart.sh /etc/haproxy/restart.sh
 
 # Add syslog-ng config
-COPY syslog-haproxy.conf /etc/syslog-ng/conf.d/haproxy.conf
+COPY syslog-haproxy.conf /etc/syslog-ng/syslog-ng.conf
 
 RUN chmod +x /etc/haproxy/restart.sh \
   && chmod +x /etc/haproxy/reload.sh \

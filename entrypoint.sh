@@ -8,7 +8,6 @@ SFTP_PORT=${SFTP_PORT:-22}
 
 mkdir -p ${LOG_DIR} ${LOG_SOCKET_DIR}
 chown -R haproxy:haproxy ${LOG_DIR} ${LOG_SOCKET_DIR}
-touch ${LOG_DIR}/haproxy.log
 
 # --- Initialization Logic ---
 
@@ -89,6 +88,9 @@ while kill -0 $HAP_PID 2>/dev/null; do
     echo "[!] dataplaneapi died! Restarting..."
     start_dataplane
   fi
+
+  # Keeps last 7 days of logs.
+  find /var/log/haproxy/ -name "haproxy-*.log" -mmin +10080 -delete
 
   sleep 5
 done
