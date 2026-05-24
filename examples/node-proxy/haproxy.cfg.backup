@@ -33,7 +33,7 @@ frontend data-plane-api-frontend from http_defaults
 
 backend data-plane-api-backend from http_defaults
   mode http
-  server data-plane-api-target localhost:5555
+  server data-plane-api-target localhost:5555 check
 
 backend unknown_service from http_defaults
   mode http
