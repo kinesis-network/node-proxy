@@ -3,6 +3,7 @@ global
   daemon
   stats socket /run/haproxy-admin.sock user root group root mode 600 level admin expose-fd listeners
   maxconn 1000
+  hard-stop-after 5m
 
 defaults http_defaults
   mode http

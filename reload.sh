@@ -1,5 +1,3 @@
 #!/bin/sh
-exec haproxy \
-  -f /etc/haproxy/mount/haproxy.cfg \
-  -p /run/haproxy.pid \
-  -sf $(cat /run/haproxy.pid)
+# Send SIGUSR2 to the master process to trigger a clean master-worker reload
+kill -12 $(cat /run/haproxy.pid)
