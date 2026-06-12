@@ -17,6 +17,7 @@ docker run -d \
   -e CACERT_BASE64=xxxx \
   -v ${ROOTDIR}/certs:/etc/haproxy/certs \
   -v ${ROOTDIR}/mount:/etc/haproxy/mount \
+  -v ${ROOTDIR}/general:/etc/haproxy/general \
   -v ${ROOTDIR}/logs:/var/log/haproxy \
   kinesisorg/node-proxy
 
@@ -28,6 +29,7 @@ docker run -d \
   -p 443:443/tcp \
   -v ${ROOTDIR}/certs:/etc/haproxy/certs \
   -v ${ROOTDIR}/mount:/etc/haproxy/mount \
+  -v ${ROOTDIR}/general:/etc/haproxy/general \
   -v ${ROOTDIR}/logs:/var/log/haproxy \
   kinesisorg/node-proxy
 
