@@ -1,1 +1,1 @@
-# Kinesis Node Proxy Container Image Sources
+# Kinesis Proxy Container Image
