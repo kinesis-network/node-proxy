@@ -14,7 +14,15 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 
 # Stage 2: Final HAProxy image
 # https://www.haproxy.com/documentation/haproxy-data-plane-api/installation/install-on-haproxy/
-FROM haproxytech/haproxy-ubuntu:3.4
+#
+# Pinned to 3.3 (built with OpenSSL). The 3.4 image switched to AWS-LC, which
+# rejects the nodes' self-signed *leaf* certs (no CA:TRUE / keyCertSign) under
+# `verify required`, so all gRPC/WS backend TLS handshakes fail (503 SC--).
+# OpenSSL accepts such certs as trust anchors; AWS-LC does not.
+# Only re-bump to 3.4+ after the nodes regenerate their certs as proper CAs
+# (IsCA + BasicConstraintsValid + KeyUsageCertSign in kinesis-dynamo's
+# utils/crypto.go). See commit 55411e0 for the original 3.3 -> 3.4 bump.
+FROM haproxytech/haproxy-ubuntu:3.3
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
