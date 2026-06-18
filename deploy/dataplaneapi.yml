@@ -1,7 +1,7 @@
 config_version: 2
 name: kinesis-node-proxy
 dataplaneapi:
-  host: 127.0.0.1
+  host: 0.0.0.0
   port: 5555
   advertised:
     api_address: ""

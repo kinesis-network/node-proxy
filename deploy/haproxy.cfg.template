@@ -45,7 +45,7 @@ defaults tcp-defaults
   timeout server 50000
 
 userlist dataplaneapi
-  user admin insecure-password password
+  user @MGMT_USERNAME@ insecure-password @MGMT_PASSWORD@
 
 frontend http-common from http-defaults
   mode http
@@ -57,7 +57,7 @@ frontend http-common from http-defaults
 frontend https-common from http-defaults
   mode http
   bind *:443 ssl crt /etc/haproxy/certs/ ssl-min-ver TLSv1.2
-  acl is_admin hdr(host) -m sub proxy1.apps.kinesiscloud.com
+  acl is_admin hdr(host) -m sub @ADMIN_HOST@
   use_backend data-plane-api-backend if is_admin
 
 backend acme_backend from tcp-defaults
