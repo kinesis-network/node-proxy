@@ -7,6 +7,7 @@ docker rmi kinesisorg/node-proxy; docker build -t kinesisorg/node-proxy .
 
 # AppProxy
 docker run -d \
+  --label network.kinesis.role=app-proxy \
   --network=host \
   --restart=always \
   --pull=always \
@@ -24,6 +25,7 @@ docker run -d \
 # AppProxy on the challenge Redis: the CA, the client certificate and its key
 # come from mounted PEM files (no password; Redis logs in the user the CN names)
 docker run -d \
+  --label network.kinesis.role=app-proxy \
   --network=host \
   --restart=always \
   --pull=always \

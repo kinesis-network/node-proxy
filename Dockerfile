@@ -16,9 +16,6 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 # https://www.haproxy.com/documentation/haproxy-data-plane-api/installation/install-on-haproxy/
 FROM haproxytech/haproxy-ubuntu:3.4
 
-# How Stator and dynamo find the node-proxy container, apart from app containers.
-LABEL network.kinesis.role=node-proxy
-
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
       openssh-server \
