@@ -48,4 +48,3 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             kinesisorg/node-proxy:${{ steps.tag.outputs.image_tag }}
-            kinesisorg/node-proxy:latest
