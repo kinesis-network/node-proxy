@@ -7,6 +7,7 @@ docker rmi kinesisorg/node-proxy; docker build -t kinesisorg/node-proxy .
 
 # AppProxy
 docker run -d \
+  --label network.kinesis.role=app-proxy \
   --network=host \
   --restart=always \
   --pull=always \
@@ -15,6 +16,26 @@ docker run -d \
   -e REDIS_MASTER_NAME=kinesis-load-balancer \
   -e REDIS_PASSWORD=password \
   -e CACERT_BASE64=xxxx \
+  -v ${ROOTDIR}/certs:/etc/haproxy/certs \
+  -v ${ROOTDIR}/mount:/etc/haproxy/mount \
+  -v ${ROOTDIR}/general:/etc/haproxy/general \
+  -v ${ROOTDIR}/logs:/var/log/haproxy \
+  kinesisorg/node-proxy
+
+# AppProxy on the challenge Redis: the CA, the client certificate and its key
+# come from mounted PEM files (no password; Redis logs in the user the CN names)
+docker run -d \
+  --label network.kinesis.role=app-proxy \
+  --network=host \
+  --restart=always \
+  --pull=always \
+  -e ACME_SOCKET=/tmp/acme-sidecar.sock \
+  -e REDIS_ADDRS=redis1.apps.kinesiscloud.com:1234,redis2.apps.kinesiscloud.com:1234 \
+  -e REDIS_MASTER_NAME=kinesis-challenge-cache \
+  -e REDIS_CA_FILE=/etc/haproxy/redis/ca.crt \
+  -e REDIS_CERT_FILE=/etc/haproxy/redis/client.crt \
+  -e REDIS_KEY_FILE=/etc/haproxy/redis/client.key \
+  -v ${ROOTDIR}/redis:/etc/haproxy/redis:ro \
   -v ${ROOTDIR}/certs:/etc/haproxy/certs \
   -v ${ROOTDIR}/mount:/etc/haproxy/mount \
   -v ${ROOTDIR}/general:/etc/haproxy/general \

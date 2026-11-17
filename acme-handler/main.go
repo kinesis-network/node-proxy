@@ -12,7 +12,9 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/redis/go-redis/v9"
@@ -25,24 +27,51 @@ func main() {
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 	masterName := os.Getenv("REDIS_MASTER_NAME")
 	caCertBase64 := os.Getenv("CACERT_BASE64")
+	// The same CA as a mounted PEM file, instead of CACERT_BASE64.
+	caFile := os.Getenv("REDIS_CA_FILE")
+	// A client certificate and key as mounted PEM files. Redis logs the
+	// client in as the ACL user its CN names, so no password is needed.
+	certFile := os.Getenv("REDIS_CERT_FILE")
+	keyFile := os.Getenv("REDIS_KEY_FILE")
 
 	if redisAddrs == "" || masterName == "" {
 		log.Fatal("Missing required environment variables: REDIS_ADDRS or REDIS_MASTER_NAME")
 	}
 
-	// Setup TLS Config from Base64 CA
+	// Setup TLS Config from the CA (Base64 or file)
 	tlsConfig := &tls.Config{}
-	if caCertBase64 != "" {
-		caCert, err := base64.StdEncoding.DecodeString(caCertBase64)
-		if err != nil {
+	var caCert []byte
+	switch {
+	case caCertBase64 != "" && caFile != "":
+		log.Fatal("Set CACERT_BASE64 or REDIS_CA_FILE, not both")
+	case caCertBase64 != "":
+		var err error
+		if caCert, err = base64.StdEncoding.DecodeString(caCertBase64); err != nil {
 			log.Fatalf("Failed to decode CACERT_BASE64: %v", err)
 		}
-
+	case caFile != "":
+		var err error
+		if caCert, err = os.ReadFile(caFile); err != nil {
+			log.Fatalf("Failed to read REDIS_CA_FILE: %v", err)
+		}
+	}
+	if caCert != nil {
 		caCertPool := x509.NewCertPool()
 		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
 			log.Fatal("Failed to append CA certificate to pool")
 		}
 		tlsConfig.RootCAs = caCertPool
+	}
+
+	if (certFile == "") != (keyFile == "") {
+		log.Fatal("Set both REDIS_CERT_FILE and REDIS_KEY_FILE, or neither")
+	}
+	if certFile != "" {
+		cc, err := newClientCert(certFile, keyFile)
+		if err != nil {
+			log.Fatalf("Failed to load the client certificate: %v", err)
+		}
+		tlsConfig.GetClientCertificate = cc.get
 	}
 
 	ctx := context.Background()
@@ -105,4 +134,60 @@ func main() {
 
 	log.Printf("Starting ACME sidecar on %s (Master: %s)", socketPath, masterName)
 	log.Fatal(http.Serve(listener, router))
+}
+
+// clientCert serves the client certificate in REDIS_CERT_FILE and
+// REDIS_KEY_FILE. The certificate is short-lived and renewed in place, so a
+// new connection reads the files again when either has changed; until a
+// renewed pair loads, the last one that did is kept. Redis checks the
+// certificate only on connect, so open connections are not affected.
+type clientCert struct {
+	certFile, keyFile string
+
+	mu                  sync.Mutex
+	cert                *tls.Certificate
+	certMtime, keyMtime time.Time
+}
+
+func newClientCert(certFile, keyFile string) (*clientCert, error) {
+	c := &clientCert{certFile: certFile, keyFile: keyFile}
+	if err := c.reload(); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// reload loads the pair when either file changed since the last load. The
+// caller holds mu, or c is not shared yet.
+func (c *clientCert) reload() error {
+	cs, err := os.Stat(c.certFile)
+	if err != nil {
+		return err
+	}
+	ks, err := os.Stat(c.keyFile)
+	if err != nil {
+		return err
+	}
+	if c.cert != nil && cs.ModTime().Equal(c.certMtime) && ks.ModTime().Equal(c.keyMtime) {
+		return nil
+	}
+	cert, err := tls.LoadX509KeyPair(c.certFile, c.keyFile)
+	if err != nil {
+		return err
+	}
+	c.cert, c.certMtime, c.keyMtime = &cert, cs.ModTime(), ks.ModTime()
+	if leaf, err := x509.ParseCertificate(cert.Certificate[0]); err == nil {
+		log.Printf("Loaded the client certificate: CN=%s, valid until %s",
+			leaf.Subject.CommonName, leaf.NotAfter.UTC().Format(time.RFC3339))
+	}
+	return nil
+}
+
+func (c *clientCert) get(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if err := c.reload(); err != nil {
+		log.Printf("Keeping the previous client certificate: %v", err)
+	}
+	return c.cert, nil
 }
