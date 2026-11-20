@@ -52,6 +52,12 @@ frontend http-common from http-defaults
   bind *:80
   # Define an ACL for ACME challenges
   acl is_acme path_beg /.well-known/acme-challenge/
+  # Opt-in HTTP -> HTTPS redirect. runtime-manager keeps the domains of the endpoints that ask
+  # for it in this map through the Data Plane API's runtime map entries (no reload needed).
+  # The map starts empty (entrypoint.sh creates it; HAProxy won't start if it's missing), so
+  # nothing redirects until an entry is added. ACME challenges stay on HTTP. The port is cut
+  # from Host: "redirect scheme" would keep it (Host x:80 -> https://x:80/).
+  http-request redirect location https://%[req.hdr(host),field(1,:)]%[pathq] code 308 if !is_acme { req.hdr(host),field(1,:),lower,map(/etc/haproxy/maps/https-redirect.map) -m found }
   use_backend acme_backend if is_acme
 
 frontend https-common from http-defaults
