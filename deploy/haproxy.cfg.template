@@ -50,6 +50,12 @@ userlist dataplaneapi
 frontend http-common from http-defaults
   mode http
   bind *:80
+  # TLS ends here, so apps only see plain HTTP. Tell them what the client used, so an app
+  # can redirect HTTP to HTTPS or build absolute URLs. set-header (not add-header)
+  # overwrites what the client sent, so these can't be spoofed. (Not in http-defaults:
+  # HAProxy forbids rules in a defaults section that backends inherit too.)
+  http-request set-header X-Forwarded-Proto http
+  http-request set-header X-Forwarded-Port %[dst_port]
   # Define an ACL for ACME challenges
   acl is_acme path_beg /.well-known/acme-challenge/
   use_backend acme_backend if is_acme
@@ -57,6 +63,9 @@ frontend http-common from http-defaults
 frontend https-common from http-defaults
   mode http
   bind *:443 ssl crt /etc/haproxy/certs/ ssl-min-ver TLSv1.2
+  # See http-common.
+  http-request set-header X-Forwarded-Proto https
+  http-request set-header X-Forwarded-Port %[dst_port]
   acl is_admin hdr(host) -m sub @ADMIN_HOST@
   use_backend data-plane-api-backend if is_admin
 
