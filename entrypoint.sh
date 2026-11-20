@@ -11,6 +11,11 @@ chown -R haproxy:haproxy ${LOG_DIR} ${LOG_SOCKET_DIR}
 
 # --- Initialization Logic ---
 
+# haproxy.cfg loads this map (HTTP -> HTTPS redirect domains) and HAProxy refuses to start
+# without the file. Create it empty if missing (also when /etc/haproxy/maps is mounted).
+mkdir -p /etc/haproxy/maps
+touch /etc/haproxy/maps/https-redirect.map
+
 if [[ -z "${SFTP_USER}" ]]; then
   echo "[*] Skip to set up SFTP"
 else
