@@ -72,7 +72,8 @@ frontend https-common from http-defaults
   # See http-common.
   http-request set-header X-Forwarded-Proto https
   http-request set-header X-Forwarded-Port %[dst_port]
-  acl is_admin hdr(host) -m sub @ADMIN_HOST@
+  # Exact match only: no other Host may reach the Data Plane API.
+  acl is_admin hdr(host) -m str @ADMIN_HOST@
   use_backend data-plane-api-backend if is_admin
 
 backend acme_backend from tcp-defaults
@@ -82,4 +83,5 @@ backend acme_backend from tcp-defaults
 
 backend data-plane-api-backend from tcp-defaults
   mode http
-  server data-plane-api-target localhost:5555 check
+  # The Data Plane API listens on loopback only (dataplaneapi.yml); :443 is the way in.
+  server data-plane-api-target 127.0.0.1:5555 check
