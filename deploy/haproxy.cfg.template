@@ -76,12 +76,12 @@ frontend https-common from http-defaults
   acl is_admin hdr(host) -m str @ADMIN_HOST@
   use_backend data-plane-api-backend if is_admin
 
-backend acme_backend from tcp-defaults
+backend acme_backend from http-defaults
   mode http
   # Point to the Go sidecar
   server sidecar /tmp/acme-sidecar.sock check
 
-backend data-plane-api-backend from tcp-defaults
+backend data-plane-api-backend from http-defaults
   mode http
   # The Data Plane API listens on loopback only (dataplaneapi.yml); :443 is the way in.
   server data-plane-api-target 127.0.0.1:5555 check
